@@ -7,7 +7,6 @@
 #include "stb_image_write.h"
 
 #define BCDEC_IMPLEMENTATION
-#define BCDEC_BC4BC5_PRECISE
 #include "bcdec.h"
 
 #define BCDEC_FOURCC(a, b, c, d) ((a) | ((b) << 8) | ((c) << 16) | ((d) << 24))
@@ -166,7 +165,8 @@ const char* format_name(int format) {
 }
 
 int main(int argc, char** argv) {
-    int w, h, fourcc, i, j, ii, jj;
+    int w, h, i, j, ii, jj;
+    unsigned int fourcc;
     char* compData, * uncompData, * src, * dst, * temp;
     float* uncompDataHDR, * dstHDR;
     char tempBlock[16*2]; // used for bc5 2 channels to 3 channels expansion

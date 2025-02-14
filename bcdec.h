@@ -1,4 +1,4 @@
-﻿/* bcdec.h - v0.97
+﻿/* bcdec.h - v0.99
    provides functions to decompress blocks of BC compressed images
    written by Sergii "iOrange" Kudlai in 2022
 
@@ -26,6 +26,8 @@
    Configuration:
       #define BCDEC_BC4BC5_PRECISE:
          enables more precise but slower BC4/BC5 decoding + signed/unsigned mode
+      #define BCDEC_BC3_PRECISE:
+         enables more precise but slower BC3 decoding
 
    CREDITS:
       Aras Pranckevicius (@aras-p)      - BC1/BC3 decoders optimizations (up to 3x the speed)
@@ -72,7 +74,7 @@
 #endif
 
 #define BCDEC_VERSION_MAJOR 0
-#define BCDEC_VERSION_MINOR 98
+#define BCDEC_VERSION_MINOR 99
 
 /* if BCDEC_STATIC causes problems, try defining BCDECDEF to 'inline' or 'static inline' */
 #ifndef BCDECDEF
@@ -228,6 +230,7 @@ static void bcdec__sharp_alpha_block(const void* compressedBlock, void* decompre
     }
 }
 
+#if !defined(BCDEC_BC3_PRECISE) || !defined(BCDEC_BC4BC5_PRECISE)
 static void bcdec__smooth_alpha_block(const void* compressedBlock, void* decompressedBlock, int destinationPitch, int pixelSize) {
     unsigned char* decompressed;
     unsigned char alpha[8];
@@ -269,8 +272,9 @@ static void bcdec__smooth_alpha_block(const void* compressedBlock, void* decompr
         decompressed += destinationPitch;
     }
 }
+#endif
 
-#ifdef BCDEC_BC4BC5_PRECISE
+#if defined(BCDEC_BC4BC5_PRECISE) || defined(BCDEC_BC3_PRECISE)
 static void bcdec__bc4_block(const void* compressedBlock, void* decompressedBlock, int destinationPitch, int pixelSize, int isSigned) {
     signed char* sblock;
     unsigned char* ublock;
@@ -332,7 +336,9 @@ static void bcdec__bc4_block(const void* compressedBlock, void* decompressedBloc
         }
     }
 }
+#endif
 
+#ifdef BCDEC_BC4BC5_PRECISE
 static void bcdec__bc4_block_float(const void* compressedBlock, void* decompressedBlock, int destinationPitch, int pixelSize, int isSigned) {
     float* decompressed;
     float alpha[8];
@@ -430,28 +436,34 @@ BCDECDEF void bcdec_bc2(const void* compressedBlock, void* decompressedBlock, in
 
 BCDECDEF void bcdec_bc3(const void* compressedBlock, void* decompressedBlock, int destinationPitch) {
     bcdec__color_block(((char*)compressedBlock) + 8, decompressedBlock, destinationPitch, 1);
+#ifndef BCDEC_BC3_PRECISE
     bcdec__smooth_alpha_block(compressedBlock, ((char*)decompressedBlock) + 3, destinationPitch, 4);
+#else
+    bcdec__bc4_block(compressedBlock, ((char*)decompressedBlock) + 3, destinationPitch, 4, 0);
+#endif
 }
 
 #ifndef BCDEC_BC4BC5_PRECISE
 BCDECDEF void bcdec_bc4(const void* compressedBlock, void* decompressedBlock, int destinationPitch) {
     bcdec__smooth_alpha_block(compressedBlock, decompressedBlock, destinationPitch, 1);
+}
 #else
 BCDECDEF void bcdec_bc4(const void* compressedBlock, void* decompressedBlock, int destinationPitch, int isSigned) {
     bcdec__bc4_block(compressedBlock, decompressedBlock, destinationPitch, 1, isSigned);
-#endif
 }
+#endif
 
 #ifndef BCDEC_BC4BC5_PRECISE
 BCDECDEF void bcdec_bc5(const void* compressedBlock, void* decompressedBlock, int destinationPitch) {
     bcdec__smooth_alpha_block(compressedBlock, decompressedBlock, destinationPitch, 2);
     bcdec__smooth_alpha_block(((char*)compressedBlock) + 8, ((char*)decompressedBlock) + 1, destinationPitch, 2);
+}
 #else
 BCDECDEF void bcdec_bc5(const void* compressedBlock, void* decompressedBlock, int destinationPitch, int isSigned) {
     bcdec__bc4_block(compressedBlock, decompressedBlock, destinationPitch, 2, isSigned);
     bcdec__bc4_block(((char*)compressedBlock) + 8, ((char*)decompressedBlock) + 1, destinationPitch, 2, isSigned);
-#endif
 }
+#endif
 
 #ifdef BCDEC_BC4BC5_PRECISE
 BCDECDEF void bcdec_bc4_float(const void* compressedBlock, void* decompressedBlock, int destinationPitch, int isSigned) {
