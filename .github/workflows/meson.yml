@@ -10,6 +10,8 @@ jobs:
       matrix:
         os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-13, macos-latest]
         build_type: [shared]
+        bc3: [true, false]
+        bc4: [true, false]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -24,17 +26,17 @@ jobs:
         shell: cmd
         run: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64
-          meson setup . build/ --buildtype release --prefix ${{ github.workspace }}/artifact/ -Ddefault_library=${{ matrix.build_type }} --optimization 3
+          meson setup . build/ --buildtype release --prefix ${{ github.workspace }}/artifact/ -Ddefault_library=${{ matrix.build_type }} -Dprecise_bc3=${{ matrix.bc3 }} -Dprecise_bc4bc5=${{ matrix.bc4 }} --optimization 3
           meson compile -C build
           meson install -C build
       - name: Compile bcdec (other)
         if: matrix.os != 'windows-latest'
         run: |
-          meson setup . build/ --buildtype release --prefix ${{ github.workspace }}/artifact/ -Ddefault_library=${{ matrix.build_type }} --optimization 3
+          meson setup . build/ --buildtype release --prefix ${{ github.workspace }}/artifact/ -Ddefault_library=${{ matrix.build_type }} -Dprecise_bc3=${{ matrix.bc3 }} -Dprecise_bc4bc5=${{ matrix.bc4 }} --optimization 3
           meson compile -C build
           meson install -C build
       - name: Upload Build
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}-${{ matrix.build_type }}
+          name: ${{ matrix.os }}-${{ matrix.build_type }}${{ matrix.bc3 && '-precisebc3' || ''}}${{ matrix.bc4 && '-precisebc4bc5' || '' }}
           path: ${{ github.workspace }}/artifact
