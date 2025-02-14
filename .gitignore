@@ -16,3 +16,4 @@ _deps
 /release
 /test_images/*.tga
 /test_images/*.hdr
+/build

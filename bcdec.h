@@ -48,6 +48,29 @@
 #ifndef BCDEC_HEADER_INCLUDED
 #define BCDEC_HEADER_INCLUDED
 
+
+#if defined _MSC_VER || defined __CYGWIN__
+	#ifdef BCDEC_STATIC
+		#define BCDEC_SHARED
+	#else
+		#ifdef BCDEC_EXPORTING
+			#define BCDEC_SHARED __declspec(dllexport)
+		#else
+			#define BCDEC_SHARED __declspec(dllimport)
+		#endif
+	#endif
+#else
+	#ifdef BCDEC_STATIC
+		#define BCDEC_SHARED
+	#else
+		#ifdef BCDEC_EXPORTING
+			#define BCDEC_SHARED __attribute__((visibility("default"))) __attribute__((unused))
+		#else
+			#define BCDEC_SHARED
+		#endif
+	#endif
+#endif
+
 #define BCDEC_VERSION_MAJOR 0
 #define BCDEC_VERSION_MINOR 98
 
@@ -57,9 +80,9 @@
 #define BCDECDEF    static
 #else
 #ifdef __cplusplus
-#define BCDECDEF    extern "C"
+#define BCDECDEF    extern "C" BCDEC_SHARED
 #else
-#define BCDECDEF    extern
+#define BCDECDEF    extern BCDEC_SHARED
 #endif
 #endif
 #endif
@@ -290,10 +313,10 @@ static void bcdec__bc4_block(const void* compressedBlock, void* decompressedBloc
 
     indices = block >> 16;
     if (isSigned) {
-        sblock = (char*)decompressedBlock;
+        sblock = (signed char*)decompressedBlock;
         for (i = 0; i < 4; ++i) {
             for (j = 0; j < 4; ++j) {
-                sblock[j * pixelSize] = (char)alpha[indices & 0x07];
+                sblock[j * pixelSize] = (signed char)alpha[indices & 0x07];
                 indices >>= 3;
             }
             sblock += destinationPitch;
@@ -617,7 +640,7 @@ BCDECDEF void bcdec_bc6h_half(const void* compressedBlock, void* decompressedBlo
 
     switch (mode) {
         /* mode 1 */
-        case 0b00: {
+        case 0: {
             /* Partitition indices: 46 bits
                Partition: 5 bits
                Color Endpoints: 75 bits (10.555, 10.555, 10.555) */
@@ -645,7 +668,7 @@ BCDECDEF void bcdec_bc6h_half(const void* compressedBlock, void* decompressedBlo
         } break;
 
         /* mode 2 */
-        case 0b01: {
+        case 1: {
             /* Partitition indices: 46 bits
                Partition: 5 bits
                Color Endpoints: 75 bits (7666, 7666, 7666) */
@@ -677,7 +700,7 @@ BCDECDEF void bcdec_bc6h_half(const void* compressedBlock, void* decompressedBlo
         } break;
 
         /* mode 3 */
-        case 0b00010: {
+        case 2: {
             /* Partitition indices: 46 bits
                Partition: 5 bits
                Color Endpoints: 72 bits (11.555, 11.444, 11.444) */
@@ -704,7 +727,7 @@ BCDECDEF void bcdec_bc6h_half(const void* compressedBlock, void* decompressedBlo
         } break;
 
         /* mode 4 */
-        case 0b00110: {
+        case 6: {
             /* Partitition indices: 46 bits
                Partition: 5 bits
                Color Endpoints: 72 bits (11.444, 11.555, 11.444) */
@@ -733,7 +756,7 @@ BCDECDEF void bcdec_bc6h_half(const void* compressedBlock, void* decompressedBlo
         } break;
 
         /* mode 5 */
-        case 0b01010: {
+        case 10: {
             /* Partitition indices: 46 bits
                Partition: 5 bits
                Color Endpoints: 72 bits (11.444, 11.444, 11.555) */
@@ -762,7 +785,7 @@ BCDECDEF void bcdec_bc6h_half(const void* compressedBlock, void* decompressedBlo
         } break;
 
         /* mode 6 */
-        case 0b01110: {
+        case 14: {
             /* Partitition indices: 46 bits
                Partition: 5 bits
                Color Endpoints: 72 bits (9555, 9555, 9555) */
@@ -790,7 +813,7 @@ BCDECDEF void bcdec_bc6h_half(const void* compressedBlock, void* decompressedBlo
         } break;
 
         /* mode 7 */
-        case 0b10010: {
+        case 18: {
             /* Partitition indices: 46 bits
                Partition: 5 bits
                Color Endpoints: 72 bits (8666, 8555, 8555) */
@@ -818,7 +841,7 @@ BCDECDEF void bcdec_bc6h_half(const void* compressedBlock, void* decompressedBlo
         } break;
 
         /* mode 8 */
-        case 0b10110: {
+        case 22: {
             /* Partitition indices: 46 bits
                Partition: 5 bits
                Color Endpoints: 72 bits (8555, 8666, 8555) */
@@ -848,7 +871,7 @@ BCDECDEF void bcdec_bc6h_half(const void* compressedBlock, void* decompressedBlo
         } break;
 
         /* mode 9 */
-        case 0b11010: {
+        case 26: {
             /* Partitition indices: 46 bits
                Partition: 5 bits
                Color Endpoints: 72 bits (8555, 8555, 8666) */
@@ -878,7 +901,7 @@ BCDECDEF void bcdec_bc6h_half(const void* compressedBlock, void* decompressedBlo
         } break;
 
         /* mode 10 */
-        case 0b11110: {
+        case 30: {
             /* Partitition indices: 46 bits
                Partition: 5 bits
                Color Endpoints: 72 bits (6666, 6666, 6666) */
@@ -910,7 +933,7 @@ BCDECDEF void bcdec_bc6h_half(const void* compressedBlock, void* decompressedBlo
         } break;
 
         /* mode 11 */
-        case 0b00011: {
+        case 3: {
             /* Partitition indices: 63 bits
                Partition: 0 bits
                Color Endpoints: 60 bits (10.10, 10.10, 10.10) */
@@ -924,7 +947,7 @@ BCDECDEF void bcdec_bc6h_half(const void* compressedBlock, void* decompressedBlo
         } break;
 
         /* mode 12 */
-        case 0b00111: {
+        case 7: {
             /* Partitition indices: 63 bits
                Partition: 0 bits
                Color Endpoints: 60 bits (11.9, 11.9, 11.9) */
@@ -941,7 +964,7 @@ BCDECDEF void bcdec_bc6h_half(const void* compressedBlock, void* decompressedBlo
         } break;
 
         /* mode 13 */
-        case 0b01011: {
+        case 11: {
             /* Partitition indices: 63 bits
                Partition: 0 bits
                Color Endpoints: 60 bits (12.8, 12.8, 12.8) */
@@ -958,7 +981,7 @@ BCDECDEF void bcdec_bc6h_half(const void* compressedBlock, void* decompressedBlo
         } break;
 
         /* mode 14 */
-        case 0b01111: {
+        case 15: {
             /* Partitition indices: 63 bits
                Partition: 0 bits
                Color Endpoints: 60 bits (16.4, 16.4, 16.4) */
@@ -1224,7 +1247,7 @@ BCDECDEF void bcdec_bc7(const void* compressedBlock, void* decompressedBlock, in
     static int aWeight3[] = { 0, 9, 18, 27, 37, 46, 55, 64 };
     static int aWeight4[] = { 0, 4, 9, 13, 17, 21, 26, 30, 34, 38, 43, 47, 51, 55, 60, 64 };
 
-    static unsigned char sModeHasPBits = 0b11001011;
+    static unsigned char sModeHasPBits = 0xCB;
 
     bcdec__bitstream_t bstream;
     int mode, partition, numPartitions, numEndpoints, i, j, k, rotation, partitionSet;
